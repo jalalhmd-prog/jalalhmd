@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>السجل العائلي</title>
+    <meta name="description" content="نظام السجل المدني العائلي - إدارة بيانات الأسر والأفراد">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Guest Screen -->
+    <div id="guestScreen" class="guest-screen">
+        <div class="login-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+        <div class="guest-container">
+            <div class="login-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h1>السجل العائلي</h1>
+            <p class="login-subtitle">مرحباً بك</p>
+            <div class="guest-actions">
+                <button class="btn btn-primary btn-full" id="guestAddFamily" style="margin-bottom:12px">
+                    <i class="fas fa-plus-circle"></i> إضافة أسرة جديدة
+                </button>
+                <div class="form-group" style="margin-top:16px">
+                    <label><i class="fas fa-search"></i> استرجاع بيانات أسرة</label>
+                    <input type="text" id="guestRetrieveId" placeholder="أدخل رقم هوية رب الأسرة...">
+                </div>
+                <button class="btn btn-success btn-full" id="guestRetrieveBtn">
+                    <i class="fas fa-search"></i> استرجاع
+                </button>
+            </div>
+            <div id="guestContent" style="margin-top:20px"></div>
+            <button class="btn btn-outline btn-full" id="adminLoginBtn" style="margin-top:24px">
+                <i class="fas fa-lock"></i> دخول المسؤول
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeAdminLogin()"></div>
+        <div class="modal-dialog" style="max-width:400px">
+            <div class="modal-header">
+                <h3>دخول المسؤول</h3>
+                <button class="modal-close" onclick="closeAdminLogin()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> اسم المستخدم</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> كلمة المرور</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i> دخول
+                    </button>
+                    <p id="loginError" class="error-msg"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Shell -->
+    <div id="appShell" class="app-shell hidden">
+        <!-- Sidebar Overlay (mobile) -->
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-users"></i>
+                    <span>السجل العائلي</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-home"></i><span>الرئيسية</span>
+                </a>
+                <a href="#" class="nav-item" data-page="all-members">
+                    <i class="fas fa-users-cog"></i><span>جميع الأفراد</span>
+                </a>
+                <a href="#" class="nav-item" data-page="search">
+                    <i class="fas fa-search"></i><span>البحث</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <i class="fas fa-chart-pie"></i><span>التقارير</span>
+                </a>
+                <a href="#" class="nav-item" data-page="import-export">
+                    <i class="fas fa-file-excel"></i><span>استيراد / تصدير</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i><span>الإعدادات</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-outline btn-full">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <button id="menuToggle" class="menu-toggle" aria-label="القائمة">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 id="pageTitle">الرئيسية</h2>
+                <div class="top-bar-actions">
+                    <button id="themeToggle" class="btn btn-icon btn-outline" aria-label="تبديل المظهر"
+                        style="font-size:18px">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <div class="quick-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="quickSearch" placeholder="بحث سريع بالاسم أو الهوية...">
+                    </div>
+                </div>
+            </header>
+            <div id="mainContent" class="content-area">
+                <!-- Dynamic content rendered here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" id="modalCloseBtn" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+            <div id="modalFooter" class="modal-footer hidden"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/pages.js"></script>
+    <script src="js/extras.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
