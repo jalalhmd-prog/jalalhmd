@@ -20,11 +20,6 @@ class FamilyDB {
                     store.createIndex('role', 'role', { unique: false });
                     store.createIndex('fullName', 'fullName', { unique: false });
                 }
-
-                if (!db.objectStoreNames.contains('auth')) {
-                    const authStore = db.createObjectStore('auth', { keyPath: 'id' });
-                    authStore.add({ id: 1, username: '1', password: '2' });
-                }
             };
 
             request.onsuccess = (event) => {
@@ -46,18 +41,6 @@ class FamilyDB {
             req.onsuccess = () => resolve(req.result);
             req.onerror = () => reject(req.error);
         });
-    }
-
-    // ===== AUTH =====
-    async getAuth() {
-        return this._request(this._tx('auth').get(1));
-    }
-
-    async updateAuth(data) {
-        const store = this._tx('auth', 'readwrite');
-        const auth = await this._request(store.get(1));
-        Object.assign(auth, data);
-        return this._request(this._tx('auth', 'readwrite').put(auth));
     }
 
     // ===== MEMBERS CRUD =====
@@ -95,17 +78,6 @@ class FamilyDB {
 
     async getAllHeads() {
         return this._request(this._tx('members').index('role').getAll('head'));
-    }
-
-    // ===== SEARCH =====
-    async search(query) {
-        const all = await this.getAllMembers();
-        const q = query.toLowerCase().trim();
-        return all.filter(m =>
-            (m.fullName && m.fullName.toLowerCase().includes(q)) ||
-            (m.nationalId && m.nationalId.includes(q)) ||
-            (m.phone && m.phone.includes(q))
-        );
     }
 
     // ===== STATS =====

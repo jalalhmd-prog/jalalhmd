@@ -79,15 +79,14 @@ async function doPromote(memberId) { await db.promoteToHead(memberId); closeModa
 async function renderMemberForm(params) {
     let member = {};
     let isEdit = false;
-    const guestMode = params.guestMode || false;
     if (params.memberId) { member = await db.getMember(params.memberId) || {}; isEdit = true; }
     const role = member.role || params.role || 'head';
     const familyId = member.familyId || params.familyId || null;
 
     const knownRelations = ['زوجة','ابن','ابنة','أخ','أخت','أب','أم','جد','جدة'];
     const relationOptions = role === 'child' ? `
-        <div class="form-group"><label>صلة القرابة</label>
-            <select id="fRelation" onchange="toggleCustomRelation(this)">
+        <div class="form-group" style="margin-bottom:10px"><label>صلة القرابة</label>
+            <select id="fRelation" onchange="toggleCustomRelation(this)" style="padding:8px 12px;font-size:13px">
                 <option value="">اختر</option>
                 <option value="زوجة" ${member.relationship==='زوجة'?'selected':''}>زوجة</option>
                 <option value="ابن" ${member.relationship==='ابن'?'selected':''}>ابن</option>
@@ -101,49 +100,50 @@ async function renderMemberForm(params) {
                 <option value="other" ${member.relationship && !knownRelations.includes(member.relationship)?'selected':''}>أخرى</option>
             </select>
         </div>
-        <div class="form-group" id="customRelationGroup" style="${member.relationship && !knownRelations.includes(member.relationship) && member.relationship?'':'display:none'}">
+        <div class="form-group" id="customRelationGroup" style="${member.relationship && !knownRelations.includes(member.relationship) && member.relationship?'':'display:none'};margin-bottom:10px">
             <label>حدد صلة القرابة</label>
-            <input type="text" id="fRelationCustom" value="${member.relationship && !knownRelations.includes(member.relationship)?member.relationship:''}" placeholder="اكتب صلة القرابة...">
+            <input type="text" id="fRelationCustom" value="${member.relationship && !knownRelations.includes(member.relationship)?member.relationship:''}" placeholder="اكتب صلة القرابة..." style="padding:8px 12px;font-size:13px">
         </div>` : '';
 
     document.getElementById('mainContent').innerHTML = `
-        <div class="card" style="max-width:700px">
-            <h3 style="margin-bottom:20px"><i class="fas fa-user-edit"></i> ${isEdit?'تعديل بيانات':'إضافة'} ${getRoleLabel(role)}</h3>
+        <div class="card" style="max-width:580px">
+            <div class="card-header" style="margin-bottom:12px;padding-bottom:10px">
+                <h3 style="font-size:15px;margin:0"><i class="fas fa-user-edit"></i> ${isEdit?'تعديل بيانات':'إضافة'} ${getRoleLabel(role)}</h3>
+                <div class="btn-group">
+                    <button type="submit" form="memberForm" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> حفظ</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="navigate(${familyId?`'family-detail',{headId:${familyId}}`:`'dashboard'`})">إلغاء</button>
+                </div>
+            </div>
             <form id="memberForm">
-                <div style="text-align:center;margin-bottom:20px">
-                    <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
-                        ${member.photo?`<img src="${member.photo}" id="photoPreview">`:'<i class="fas fa-camera"></i><span>صورة</span>'}
+                <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px">
+                    <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()" style="width:80px;height:80px;flex-shrink:0">
+                        ${member.photo?`<img src="${member.photo}" id="photoPreview">`:'<i class="fas fa-camera" style="font-size:20px"></i><span style="font-size:10px">صورة</span>'}
                         <input type="file" id="photoInput" accept="image/*">
                     </div>
+                    <div style="flex:1">
+                        <div class="form-group" style="margin-bottom:0"><label>الاسم الكامل *</label><input type="text" id="fName" value="${member.fullName||''}" required style="padding:8px 12px;font-size:13px"></div>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>الاسم الكامل *</label><input type="text" id="fName" value="${member.fullName||''}" required></div>
-                    <div class="form-group"><label>رقم الهوية</label><input type="text" id="fNatId" value="${member.nationalId||''}"></div>
+                <div class="form-row" style="gap:10px">
+                    <div class="form-group" style="margin-bottom:10px"><label>رقم الهوية</label><input type="text" id="fNatId" value="${member.nationalId||''}" style="padding:8px 12px;font-size:13px"></div>
+                    <div class="form-group" style="margin-bottom:10px"><label>الجنس *</label><select id="fGender" required style="padding:8px 12px;font-size:13px"><option value="">اختر</option><option value="male" ${member.gender==='male'?'selected':''}>ذكر</option><option value="female" ${member.gender==='female'?'selected':''}>أنثى</option></select></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>الجنس *</label><select id="fGender" required><option value="">اختر</option><option value="male" ${member.gender==='male'?'selected':''}>ذكر</option><option value="female" ${member.gender==='female'?'selected':''}>أنثى</option></select></div>
-                    <div class="form-group"><label>تاريخ الميلاد</label><input type="date" id="fBirth" value="${member.birthDate||''}"></div>
+                <div class="form-row" style="gap:10px">
+                    <div class="form-group" style="margin-bottom:10px"><label>تاريخ الميلاد</label><input type="date" id="fBirth" value="${member.birthDate||''}" style="padding:8px 12px;font-size:13px"></div>
+                    <div class="form-group" style="margin-bottom:10px"><label>الحالة الاجتماعية</label><select id="fMarital" style="padding:8px 12px;font-size:13px"><option value="">اختر</option><option value="single" ${member.maritalStatus==='single'?'selected':''}>أعزب/عزباء</option><option value="married" ${member.maritalStatus==='married'?'selected':''}>متزوج/ة</option><option value="divorced" ${member.maritalStatus==='divorced'?'selected':''}>مطلق/ة</option><option value="widowed" ${member.maritalStatus==='widowed'?'selected':''}>أرمل/ة</option><option value="separated" ${member.maritalStatus==='separated'?'selected':''}>منفصل/ة</option></select></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>الحالة الاجتماعية</label><select id="fMarital"><option value="">اختر</option><option value="single" ${member.maritalStatus==='single'?'selected':''}>أعزب/عزباء</option><option value="married" ${member.maritalStatus==='married'?'selected':''}>متزوج/ة</option><option value="divorced" ${member.maritalStatus==='divorced'?'selected':''}>مطلق/ة</option><option value="widowed" ${member.maritalStatus==='widowed'?'selected':''}>أرمل/ة</option><option value="separated" ${member.maritalStatus==='separated'?'selected':''}>منفصل/ة</option></select></div>
-                    <div class="form-group"><label>اسم الأم</label><input type="text" id="fMother" value="${member.motherName||''}"></div>
+                <div class="form-row" style="gap:10px">
+                    <div class="form-group" style="margin-bottom:10px"><label>اسم الأم</label><input type="text" id="fMother" value="${member.motherName||''}" style="padding:8px 12px;font-size:13px"></div>
+                    <div class="form-group" style="margin-bottom:10px"><label>لقب العائلة</label><input type="text" id="fFamilyName" value="${member.familyName||''}" style="padding:8px 12px;font-size:13px"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>لقب العائلة (الفرع)</label><input type="text" id="fFamilyName" value="${member.familyName||''}"></div>
-                    ${relationOptions}
+                ${relationOptions}
+                <div class="form-row" style="gap:10px">
+                    <div class="form-group" style="margin-bottom:10px"><label>العنوان</label><input type="text" id="fAddress" value="${member.address||''}" style="padding:8px 12px;font-size:13px"></div>
+                    <div class="form-group" style="margin-bottom:10px"><label>رقم الجوال</label><input type="text" id="fPhone" value="${member.phone||''}" style="padding:8px 12px;font-size:13px"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label>العنوان</label><input type="text" id="fAddress" value="${member.address||''}"></div>
-                    <div class="form-group"><label>رقم الجوال</label><input type="text" id="fPhone" value="${member.phone||''}"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>تاريخ الوفاة</label><input type="date" id="fDeath" value="${member.deathDate||''}"></div>
-                    <div class="form-group"></div>
-                </div>
-                <div class="form-group"><label>ملاحظات</label><textarea id="fNotes">${member.notes||''}</textarea></div>
-                <div class="btn-group">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
-                    <button type="button" class="btn btn-outline" onclick="${guestMode?'backToGuest()':`navigate(${familyId&&role!=='head'?`'family-detail',{headId:${familyId}}`:`'dashboard'`})`}">إلغاء</button>
+                <div class="form-row" style="gap:10px">
+                    <div class="form-group" style="margin-bottom:10px"><label>تاريخ الوفاة</label><input type="date" id="fDeath" value="${member.deathDate||''}" style="padding:8px 12px;font-size:13px"></div>
+                    <div class="form-group" style="margin-bottom:10px"><label>ملاحظات</label><textarea id="fNotes" style="padding:8px 12px;font-size:13px;min-height:50px">${member.notes||''}</textarea></div>
                 </div>
             </form>
         </div>`;
@@ -204,7 +204,7 @@ async function renderMemberForm(params) {
                 showToast('تمت الإضافة بنجاح');
             }
             if (guestMode) {
-                backToGuest();
+                navigate('dashboard');
             } else {
                 navigate(familyId && role !== 'head' ? 'family-detail' : 'dashboard', familyId && role !== 'head' ? {headId: familyId} : {});
             }
@@ -217,7 +217,7 @@ function toggleCustomRelation(sel) {
     g.style.display = sel.value === 'other' ? '' : 'none';
 }
 
-// ===== ALL MEMBERS (with filters) =====
+// ===== ALL MEMBERS (with filters and search) =====
 async function renderAllMembers() {
     const all = await db.getAllMembers();
     const heads = await db.getAllHeads();
@@ -240,10 +240,15 @@ async function renderAllMembers() {
     let html = `<div class="section"><div class="section-header"><h3 class="section-title"><i class="fas fa-users"></i> جميع الأفراد (${all.length})</h3>
         <div class="btn-group no-print">
             <button class="btn btn-primary btn-sm" onclick="navigate('add-member',{role:'head'})"><i class="fas fa-plus"></i> إضافة أسرة</button>
-            <button class="btn btn-outline btn-sm" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
-            <button class="btn btn-success btn-sm" onclick="exportFilteredToExcel()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
         </div></div>
+        <div id="selectedActions" class="btn-group no-print" style="display:none;margin-bottom:12px">
+            <button class="btn btn-success btn-sm" onclick="exportSelectedToExcel()"><i class="fas fa-file-excel"></i> تصدير</button>
+            <button class="btn btn-outline btn-sm" onclick="printSelected()"><i class="fas fa-print"></i> طباعة</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSelected()"><i class="fas fa-trash"></i> حذف المحدد</button>
+            <span class="filter-count" id="selectedCount"></span>
+        </div>
         <div class="filter-bar no-print">
+            <div class="filter-group" style="flex:1;min-width:200px"><label>بحث</label><input type="text" id="filterSearch" placeholder="ابحث بالاسم أو الهوية..." oninput="applyFilters()"></div>
             <div class="filter-group"><label>العمر من</label><input type="number" id="filterAgeFrom" min="0" placeholder="من" style="width:80px" oninput="applyFilters()"></div>
             <div class="filter-group"><label>إلى</label><input type="number" id="filterAgeTo" min="0" placeholder="إلى" style="width:80px" oninput="applyFilters()"></div>
             <div class="filter-group"><label>الحالة الاجتماعية</label>
@@ -263,6 +268,7 @@ async function renderAllMembers() {
 
 function applyFilters() {
     const data = window._allMembersData || [];
+    const search = document.getElementById('filterSearch')?.value.trim().toLowerCase() || '';
     const ageFromVal = document.getElementById('filterAgeFrom')?.value;
     const ageToVal = document.getElementById('filterAgeTo')?.value;
     const ageFrom = ageFromVal !== '' && ageFromVal !== undefined ? parseInt(ageFromVal) : null;
@@ -273,6 +279,12 @@ function applyFilters() {
 
     const filtered = data.filter(m => {
         const age = calculateAge(m.birthDate);
+        if (search) {
+            const matchName = m.fullName && m.fullName.toLowerCase().includes(search);
+            const matchNatId = m.nationalId && m.nationalId.includes(search);
+            const matchPhone = m.phone && m.phone.includes(search);
+            if (!matchName && !matchNatId && !matchPhone) return false;
+        }
         if (hasAgeFilter) {
             if (age === '') return false;
             if (ageFrom !== null && age < ageFrom) return false;
@@ -291,10 +303,11 @@ function applyFilters() {
     } else {
         html = '<h3 class="print-header">قائمة جميع الأفراد</h3>';
         html += `<p class="filter-count no-print" style="color:var(--text-muted);margin-bottom:10px">عرض ${filtered.length} من ${data.length} فرد</p>`;
-        html += '<div class="table-wrapper"><table><thead><tr><th>الاسم</th><th>الهوية</th><th>الجنس</th><th>الدور</th><th>صلة القرابة</th><th>العمر</th><th>الحالة</th><th>الفرع</th><th>الجوال</th></tr></thead><tbody>';
+        html += '<div class="table-wrapper"><table><thead><tr><th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th><th>الاسم</th><th>الهوية</th><th>الجنس</th><th>الدور</th><th>صلة القرابة</th><th>العمر</th><th>الحالة</th><th>الفرع</th><th>الجوال</th></tr></thead><tbody>';
         for (const m of filtered) {
-            html += `<tr style="cursor:pointer" onclick="${m.role==='head'?`navigate('family-detail',{headId:${m.id}})`:`navigate('edit-member',{memberId:${m.id}})`}" ${m.role==='head'?'class="head-row"':''}>
-                <td>${m.fullName}</td><td>${m.nationalId||'-'}</td><td>${getGenderLabel(m.gender)}</td>
+            html += `<tr style="cursor:pointer" ${m.role==='head'?'class="head-row"':''}>
+                <td><input type="checkbox" class="member-checkbox" data-id="${m.id}" onchange="updateSelectedActions()"></td>
+                <td onclick="${m.role==='head'?`navigate('family-detail',{headId:${m.id}})`:`navigate('edit-member',{memberId:${m.id}})`}">${m.fullName}</td><td>${m.nationalId||'-'}</td><td>${getGenderLabel(m.gender)}</td>
                 <td><span class="badge ${m.role==='head'?'badge-primary':'badge-success'}">${getRoleLabel(m.role)}</span></td>
                 <td>${m.relationship||'-'}</td><td>${formatAge(m.birthDate)}</td>
                 <td>${getMaritalLabel(m.maritalStatus)}</td><td>${m.familyName||'-'}</td><td>${m.phone||'-'}</td></tr>`;
@@ -306,6 +319,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
+    document.getElementById('filterSearch').value = '';
     document.getElementById('filterAgeFrom').value = '';
     document.getElementById('filterAgeTo').value = '';
     document.getElementById('filterMarital').value = '';
@@ -313,15 +327,41 @@ function resetFilters() {
     applyFilters();
 }
 
-async function exportFilteredToExcel() {
-    const data = window._filteredData || window._allMembersData || [];
-    if (!data.length) { showToast('لا توجد بيانات للتصدير', 'warning'); return; }
+// ===== SELECTED ACTIONS =====
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = checked);
+    updateSelectedActions();
+}
+
+function updateSelectedActions() {
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    const actions = document.getElementById('selectedActions');
+    const count = document.getElementById('selectedCount');
+    if (checked.length > 0) {
+        actions.style.display = 'flex';
+        count.textContent = `${checked.length} محدد`;
+    } else {
+        actions.style.display = 'none';
+    }
+}
+
+async function getSelectedMembers() {
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    const ids = [...checked].map(cb => parseInt(cb.dataset.id));
+    const all = await db.getAllMembers();
+    return all.filter(m => ids.includes(m.id));
+}
+
+async function exportSelectedToExcel() {
+    const selected = await getSelectedMembers();
+    if (!selected.length) { showToast('لم يتم تحديد أفراد', 'warning'); return; }
 
     const heads = await db.getAllHeads();
     const headMap = {};
     heads.forEach(h => { headMap[h.id] = h.nationalId; });
 
-    const exportData = data.map(m => ({
+    const exportData = selected.map(m => ({
         'الاسم': m.fullName, 'رقم الهوية': m.nationalId, 'الجنس': getGenderLabel(m.gender),
         'تاريخ الميلاد': m.birthDate, 'العمر': calculateAge(m.birthDate) !== '' ? calculateAge(m.birthDate) : '',
         'الحالة الاجتماعية': getMaritalLabel(m.maritalStatus), 'اسم الأم': m.motherName,
@@ -334,42 +374,47 @@ async function exportFilteredToExcel() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'الأفراد');
-    XLSX.writeFile(wb, 'سجل_العائلة_مفلتر.xlsx');
-    showToast('تم تصدير البيانات بنجاح');
+    XLSX.writeFile(wb, 'سجل_العائلة_محدد.xlsx');
+    showToast('تم تصدير المحدد');
 }
 
-// ===== SEARCH (with age) =====
-async function renderSearch(query) {
-    let html = `<div class="section"><div class="section-header"><h3 class="section-title"><i class="fas fa-search"></i> البحث</h3></div>
-        <div class="form-group no-print"><input type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهوية..." value="${query}" style="max-width:500px"></div>
-        <div id="searchResults"></div></div>`;
+async function printSelected() {
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    if (!checked.length) { showToast('لم يتم تحديد أفراد', 'warning'); return; }
+    const ids = [...checked].map(cb => parseInt(cb.dataset.id));
+    const all = window._allMembersData || [];
+    const selected = all.filter(m => ids.includes(m.id));
+
+    let html = `<div class="section"><div class="section-header"><h3 class="section-title"><i class="fas fa-print"></i> معاينة الطباعة (${selected.length} فرد)</h3>
+        <div class="btn-group no-print">
+            <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
+            <button class="btn btn-outline btn-sm" onclick="navigate('all-members')"><i class="fas fa-times"></i> إلغاء</button>
+        </div></div>
+        <div class="table-wrapper"><table><thead><tr><th>الاسم</th><th>الهوية</th><th>الجنس</th><th>العمر</th><th>الحالة</th><th>الجوال</th></tr></thead><tbody>`;
+    for (const m of selected) {
+        html += `<tr><td>${m.fullName}</td><td>${m.nationalId||'-'}</td><td>${getGenderLabel(m.gender)}</td><td>${formatAge(m.birthDate)}</td><td>${getMaritalLabel(m.maritalStatus)}</td><td>${m.phone||'-'}</td></tr>`;
+    }
+    html += '</tbody></table></div></div>';
+
     document.getElementById('mainContent').innerHTML = html;
-
-    const input = document.getElementById('searchInput');
-    input.focus();
-
-    const doSearch = async () => {
-        const q = input.value.trim();
-        const resultsDiv = document.getElementById('searchResults');
-        if (!q) { resultsDiv.innerHTML = ''; return; }
-        const results = await db.search(q);
-        if (!results.length) { resultsDiv.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><h3>لا توجد نتائج</h3></div>'; return; }
-
-        let rhtml = `<div class="section-header"><p style="color:var(--text-muted)">تم العثور على ${results.length} نتيجة</p>
-            <button class="btn btn-outline btn-sm no-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة النتائج</button></div>
-            <h3 class="print-header">نتائج البحث: ${q}</h3>
-            <div class="table-wrapper"><table><thead><tr><th>الاسم</th><th>الهوية</th><th>الجنس</th><th>الدور</th><th>الفرع</th><th>العمر</th><th>الحالة</th><th>اسم الأم</th><th>الميلاد</th><th>العنوان</th><th>الجوال</th></tr></thead><tbody>`;
-        for (const m of results) {
-            rhtml += `<tr style="cursor:pointer" onclick="${m.role==='head'?`navigate('family-detail',{headId:${m.id}})`:`navigate('edit-member',{memberId:${m.id}})`}">
-                <td>${m.fullName}</td><td>${m.nationalId||'-'}</td><td>${getGenderLabel(m.gender)}</td>
-                <td><span class="badge ${m.role==='head'?'badge-primary':'badge-success'}">${getRoleLabel(m.role)}</span></td>
-                <td>${m.familyName||'-'}</td><td>${formatAge(m.birthDate)}</td><td>${getMaritalLabel(m.maritalStatus)}</td><td>${m.motherName||'-'}</td>
-                <td>${formatDate(m.birthDate)}</td><td>${m.address||'-'}</td><td>${m.phone||'-'}</td></tr>`;
-        }
-        rhtml += '</tbody></table></div>';
-        resultsDiv.innerHTML = rhtml;
-    };
-
-    input.addEventListener('input', doSearch);
-    if (query) doSearch();
 }
+
+async function deleteSelected() {
+    const selected = await getSelectedMembers();
+    if (!selected.length) { showToast('لم يتم تحديد أفراد', 'warning'); return; }
+
+    showModal('تأكيد الحذف', `<p>هل أنت متأكد من حذف ${selected.length} فرد؟</p>`,
+        `<button class="btn btn-danger" onclick="doDeleteSelected()">نعم، احذف</button><button class="btn btn-outline" onclick="closeModal()">إلغاء</button>`);
+}
+
+async function doDeleteSelected() {
+    const selected = await getSelectedMembers();
+    for (const m of selected) {
+        await db.deleteMember(m.id);
+    }
+    closeModal();
+    showToast(`تم حذف ${selected.length} فرد`);
+    renderAllMembers();
+}
+
+

@@ -1,93 +1,12 @@
 // app.js - Core Application
 const db = new FamilyDB();
 let currentPage = 'dashboard';
-let isAdmin = false;
 
 async function initApp() {
     await db.init();
     await db.migrateWifesToChildren();
     setupEvents();
-    // Start in guest mode
-    showGuest();
-}
-
-// ===== AUTH =====
-function showGuest() {
-    isAdmin = false;
-    document.getElementById('guestScreen').classList.remove('hidden');
-    document.getElementById('appShell').classList.add('hidden');
-}
-
-function showAdmin() {
-    isAdmin = true;
-    document.getElementById('guestScreen').classList.add('hidden');
-    document.getElementById('appShell').classList.remove('hidden');
     navigate('dashboard');
-}
-
-function openAdminLogin() {
-    document.getElementById('adminLoginModal').classList.remove('hidden');
-}
-
-function closeAdminLogin() {
-    document.getElementById('adminLoginModal').classList.add('hidden');
-    document.getElementById('loginError').textContent = '';
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-    const u = document.getElementById('loginUsername').value;
-    const p = document.getElementById('loginPassword').value;
-    const auth = await db.getAuth();
-    if (auth && u === auth.username && p === auth.password) {
-        sessionStorage.setItem('loggedIn', '1');
-        closeAdminLogin();
-        showAdmin();
-    } else {
-        document.getElementById('loginError').textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
-    }
-}
-
-// ===== GUEST ACTIONS =====
-async function guestRetrieveFamily() {
-    const natId = document.getElementById('guestRetrieveId').value.trim();
-    if (!natId) { showToast('أدخل رقم الهوية', 'warning'); return; }
-    const results = await db.search(natId);
-    const head = results.find(m => m.role === 'head' && m.nationalId === natId);
-    if (!head) { showToast('لا توجد أسرة بهذا الرقم', 'error'); return; }
-    // Show family info in guest content (read-only with request edit)
-    const members = await db.getFamilyMembers(head.id);
-    const others = members.filter(m => m.role !== 'head')
-        .sort((a, b) => sortByAge(a, b));
-
-    document.getElementById('guestContent').innerHTML = `
-        <div class="card" style="text-align:right;margin-top:16px">
-            <h4 style="margin-bottom:12px;color:var(--primary-light)"><i class="fas fa-house-user"></i> أسرة ${head.fullName} ${head.familyName?'('+head.familyName+')':''}</h4>
-            <div class="member-info-grid">
-                ${infoItem('رب الأسرة',head.fullName)}
-                ${infoItem('الهوية',head.nationalId)}
-                ${infoItem('الجنس',getGenderLabel(head.gender))}
-                ${infoItem('تاريخ الميلاد',formatDate(head.birthDate))}
-                ${infoItem('العمر',formatAge(head.birthDate))}
-                ${infoItem('الحالة',getMaritalLabel(head.maritalStatus))}
-                ${infoItem('اسم الأم',head.motherName)}
-                ${infoItem('العنوان',head.address)}
-                ${infoItem('الجوال',head.phone)}
-            </div>
-            ${others.length ? `<h4 style="margin:12px 0 8px;font-size:14px"><i class="fas fa-users"></i> أفراد الأسرة</h4>
-                <div class="member-info-grid">${others.map(c => infoItem(c.relationship || 'فرد', c.fullName + (formatAge(c.birthDate) !== '-' ? ' (' + formatAge(c.birthDate) + ')' : ''))).join('')}</div>` : ''}
-            <div style="margin-top:16px">
-                <button class="btn btn-success btn-sm" onclick="guestAddMember(${head.id})"><i class="fas fa-plus"></i> إضافة فرد</button>
-            </div>
-        </div>`;
-}
-
-function guestAddMember(headId) {
-    document.getElementById('guestScreen').classList.add('hidden');
-    document.getElementById('appShell').classList.remove('hidden');
-    document.querySelector('.sidebar').classList.add('hidden');
-    document.querySelector('.main-content').style.marginRight = '0';
-    navigate('add-member', {role:'child', familyId: headId, guestMode: true});
 }
 
 // ===== NAVIGATION =====
@@ -97,7 +16,7 @@ function navigate(page, params = {}) {
     const active = document.querySelector(`[data-page="${page}"]`);
     if (active) active.classList.add('active');
 
-    const titles = { dashboard:'الرئيسية', 'all-members':'جميع الأفراد', search:'البحث', reports:'التقارير', 'import-export':'استيراد / تصدير', settings:'الإعدادات', 'family-detail':'تفاصيل الأسرة', 'add-member':'إضافة فرد', 'edit-member':'تعديل بيانات', 'family-tree':'شجرة الأسرة' };
+    const titles = { dashboard:'الرئيسية', 'all-members':'جميع الأفراد', 'import-export':'استيراد / تصدير', settings:'الإعدادات', 'family-detail':'تفاصيل الأسرة', 'add-member':'إضافة فرد', 'edit-member':'تعديل بيانات', 'family-tree':'شجرة الأسرة' };
     document.getElementById('pageTitle').textContent = titles[page] || '';
 
     closeSidebar();
@@ -109,11 +28,9 @@ function navigate(page, params = {}) {
             case 'dashboard': renderDashboard(); break;
             case 'family-detail': renderFamilyDetail(params.headId); break;
             case 'all-members': renderAllMembers(); break;
-            case 'search': renderSearch(params.query || ''); break;
+            case 'import-export': renderImportExport(); break;
             case 'add-member': renderMemberForm(params); break;
             case 'edit-member': renderMemberForm(params); break;
-            case 'reports': renderReports(); break;
-            case 'import-export': renderImportExport(); break;
             case 'settings': renderSettings(); break;
             case 'family-tree': renderFamilyTree(params.headId); break;
             default: renderDashboard();
@@ -123,23 +40,8 @@ function navigate(page, params = {}) {
 
 // ===== EVENTS =====
 function setupEvents() {
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('adminLoginBtn').addEventListener('click', openAdminLogin);
-    document.getElementById('guestAddFamily').addEventListener('click', () => {
-        // Switch to admin-like view just for adding
-        document.getElementById('guestScreen').classList.add('hidden');
-        document.getElementById('appShell').classList.remove('hidden');
-        document.querySelector('.sidebar').classList.add('hidden');
-        document.querySelector('.main-content').style.marginRight = '0';
-        navigate('add-member', {role:'head', guestMode: true});
-    });
-    document.getElementById('guestRetrieveBtn').addEventListener('click', guestRetrieveFamily);
-    document.getElementById('guestRetrieveId').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') guestRetrieveFamily();
-    });
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem('loggedIn');
-        showGuest();
+        navigate('dashboard');
     });
     document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
     document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
@@ -147,9 +49,6 @@ function setupEvents() {
     document.querySelector('#modal .modal-overlay').addEventListener('click', closeModal);
     document.querySelectorAll('.nav-item').forEach(n => {
         n.addEventListener('click', (e) => { e.preventDefault(); navigate(n.dataset.page); });
-    });
-    document.getElementById('quickSearch').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.value.trim()) navigate('search', { query: e.target.value.trim() });
     });
     // Theme toggle
     const saved = localStorage.getItem('theme') || 'dark';
@@ -167,12 +66,6 @@ function setupEvents() {
 function updateThemeIcon(theme) {
     const btn = document.getElementById('themeToggle');
     btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-}
-
-function backToGuest() {
-    document.querySelector('.sidebar').classList.remove('hidden');
-    document.querySelector('.main-content').style.marginRight = '';
-    showGuest();
 }
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
@@ -258,6 +151,7 @@ async function renderDashboard() {
         familiesHtml = '<div class="cards-grid">';
         for (const h of heads) {
             const members = all.filter(m => m.familyId === h.id);
+            const children = members.filter(m => m.role === 'child').sort((a, b) => sortByAge(a, b));
             familiesHtml += `<div class="card family-card" onclick="navigate('family-detail',{headId:${h.id}})">
                 <div class="family-card-head"><div class="family-avatar">${h.photo?`<img src="${h.photo}">`:'<i class="fas fa-user"></i>'}</div>
                 <div><div class="family-name">${h.fullName} ${h.familyName?'<small style="color:var(--text-muted)">('+h.familyName+')</small>':''}</div><div class="family-id">هوية: ${h.nationalId||'-'}</div></div></div>
@@ -277,11 +171,11 @@ async function renderDashboard() {
         </div>
         <div class="quick-actions">
             <div class="quick-action" onclick="navigate('add-member',{role:'head'})"><i class="fas fa-plus-circle"></i><span>إضافة أسرة جديدة</span></div>
-            <div class="quick-action" onclick="navigate('search')"><i class="fas fa-search"></i><span>البحث</span></div>
+            <div class="quick-action" onclick="navigate('all-members')"><i class="fas fa-users"></i><span>جميع الأفراد</span></div>
             <div class="quick-action" onclick="navigate('import-export')"><i class="fas fa-file-excel"></i><span>استيراد / تصدير</span></div>
         </div>
         <div class="section">
-            <div class="section-header"><h3 class="section-title"><i class="fas fa-house-user"></i> الأسر (${heads.length})</h3></div>
+            <div class="section-header"><h3 class="section-title"><i class="fas fa-house-user"></i> البطاقات العائلية (${heads.length})</h3></div>
             ${familiesHtml}
         </div>`;
 }

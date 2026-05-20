@@ -125,15 +125,9 @@ img{max-width:100%;display:block}
 .top-bar{height:var(--topbar-h);display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid rgba(255,255,255,0.08);background:#0a0a1a;position:sticky;top:0;z-index:50}
 [data-theme="light"] .top-bar{background:#1e293b;color:#e2e8f0}
 [data-theme="light"] .top-bar *{color:#e2e8f0}
-[data-theme="light"] .top-bar .quick-search-box input{border-color:rgba(255,255,255,0.15);color:#fff}
-[data-theme="light"] .top-bar .quick-search-box input::placeholder{color:rgba(255,255,255,0.5)}
 .menu-toggle{display:none;font-size:20px;color:var(--text-muted)}
 #pageTitle{font-size:20px;font-weight:700;white-space:nowrap}
 .top-bar-actions{margin-right:auto;display:flex;align-items:center;gap:12px}
-.quick-search-box{position:relative;width:280px}
-.quick-search-box i{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-dark);font-size:14px}
-.quick-search-box input{width:100%;padding:8px 36px 8px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,0.04);font-size:14px}
-.quick-search-box input:focus{border-color:var(--primary);background:rgba(255,255,255,0.06)}
 .content-area{flex:1;padding:24px;overflow-y:auto}
 
 /* ===== Stats Cards ===== */
@@ -290,6 +284,7 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
     thead{background:#eee!important}
     .stats-grid{display:none!important}
     .print-header{display:block!important;text-align:center;margin-bottom:20px;font-size:22px;font-weight:bold}
+    .member-checkbox,th:first-child,td:first-child{display:none!important}
 }
 .print-header{display:none}
 
@@ -300,7 +295,6 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
     .sidebar-overlay.active{display:block}
     .main-content{margin-right:0}
     .menu-toggle{display:flex}
-    .quick-search-box{width:180px}
     .top-bar{padding:0 16px}
     .content-area{padding:16px}
     .stats-grid{grid-template-columns:1fr 1fr}
@@ -310,7 +304,6 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
 }
 @media(max-width:480px){
     .stats-grid{grid-template-columns:1fr}
-    .quick-search-box{display:none}
     .login-card{padding:32px 24px}
     .form-row{grid-template-columns:1fr}
 }
