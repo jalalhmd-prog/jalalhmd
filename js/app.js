@@ -163,6 +163,7 @@ async function renderDashboard() {
     }
 
     document.getElementById('mainContent').innerHTML = `
+        <h3 class="print-header">السجل العائلي - لوحة التحكم</h3>
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-house-user"></i></div><div class="stat-info"><h3>${stats.families}</h3><p>أسرة</p></div></div>
             <div class="stat-card"><div class="stat-icon green"><i class="fas fa-users"></i></div><div class="stat-info"><h3>${stats.total}</h3><p>فرد</p></div></div>

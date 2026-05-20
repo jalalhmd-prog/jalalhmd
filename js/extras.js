@@ -161,6 +161,11 @@ async function handleImportFile(file) {
             const allMembers = await db.getAllMembers();
             const existingNatIds = new Set(allMembers.map(m => m.nationalId).filter(Boolean));
 
+            // Map existing heads by nationalId
+            const heads = allMembers.filter(m => m.role === 'head');
+            const existingHeadMap = {};
+            heads.forEach(h => { if (h.nationalId) existingHeadMap[h.nationalId] = h.id; });
+
             // Add heads first
             for (const m of members.filter(x => x.role === 'head')) {
                 if (!m.fullName) { failed++; errors.push('سطر بدون اسم'); continue; }
@@ -175,11 +180,18 @@ async function handleImportFile(file) {
             // Add children (linked by headNatId)
             for (const m of members.filter(x => x.role !== 'head')) {
                 if (!m.fullName) { failed++; errors.push('سطر بدون اسم'); continue; }
-                if (m.nationalId && existingNatIds.has(m.nationalId)) { failed++; errors.push(`${m.fullName}: رقم الهوية موجود مسبقاً`); continue; }
-                const fId = headIdMap[m.headNatId];
+                
+                // Check if head exists in DB
+                let fId = headIdMap[m.headNatId];
+                if (!fId && m.headNatId && existingHeadMap[m.headNatId]) {
+                    fId = existingHeadMap[m.headNatId];
+                }
+                
                 if (!fId) { failed++; errors.push(`${m.fullName}: رب الأسرة غير موجود (هوية: ${m.headNatId})`); continue; }
+                // Accept child if nationalId matches father's ID
+                if (m.nationalId && existingNatIds.has(m.nationalId) && m.nationalId !== m.headNatId) { failed++; errors.push(`${m.fullName}: رقم الهوية موجود مسبقاً`); continue; }
                 await db.addMember({...m, familyId: fId});
-                if (m.nationalId) existingNatIds.add(m.nationalId);
+                if (m.nationalId && m.nationalId !== m.headNatId) existingNatIds.add(m.nationalId);
                 success++;
             }
 
